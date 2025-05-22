@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"sync/atomic"
@@ -29,24 +28,17 @@ func main() {
 	mux := http.NewServeMux() //creating a serve multiplexer :- connects request types --> handlers
 
 	//Register the Handler
-	mux.HandleFunc("/healthz", handleReadiness)
+	mux.HandleFunc("GET /healthz", handleReadiness) //only accesssible for GET req
 
 	file_handler := http.FileServer(http.Dir(root_file_path))
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", file_handler)))
 
-	mux.HandleFunc("/metrics", apiCfg.handleNumberOfRequestes)
-	mux.HandleFunc("/reset", apiCfg.handleReset)
+	mux.HandleFunc("GET /metrics", apiCfg.handleMetrics)
+	mux.HandleFunc("POST /reset", apiCfg.handleReset)
 
 	srv := &http.Server{Handler: mux, Addr: ":" + port}
 
 	log.Printf("Serving files from %s on port: %s\n", root_file_path, port)
 
 	log.Fatal(http.ListenAndServe(srv.Addr, srv.Handler))
-}
-
-func (cfg *apiConfig) handleNumberOfRequestes(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(fmt.Appendf(nil, "Hits: %d", cfg.fileserverHits.Load()))
-
 }
