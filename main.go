@@ -28,13 +28,13 @@ func main() {
 	mux := http.NewServeMux() //creating a serve multiplexer :- connects request types --> handlers
 
 	//Register the Handler
-	mux.HandleFunc("GET /healthz", handleReadiness) //only accesssible for GET req
+	mux.HandleFunc("GET /api/healthz", handleReadiness) //only accesssible for GET req
 
 	file_handler := http.FileServer(http.Dir(root_file_path))
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", file_handler)))
 
-	mux.HandleFunc("GET /metrics", apiCfg.handleMetrics)
-	mux.HandleFunc("POST /reset", apiCfg.handleReset)
+	mux.HandleFunc("GET /api/metrics", apiCfg.handleMetrics)
+	mux.HandleFunc("POST /api/reset", apiCfg.handleReset)
 
 	srv := &http.Server{Handler: mux, Addr: ":" + port}
 
