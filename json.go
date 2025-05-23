@@ -14,7 +14,7 @@ func respondWithError(w http.ResponseWriter, code int, msg string, err error) {
 		log.Printf("Responding with 5XX error: %s", msg)
 	}
 	type errorResp struct {
-		Error string `json: "error"`
+		Error string `json:"error"`
 	}
 	respondWithJson(w, code, errorResp{
 		Error: msg,
