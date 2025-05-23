@@ -2,23 +2,38 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"sync/atomic"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/mhv2408/Chirpy/internal/database"
 )
 
+type User struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Email     string    `json:"email"`
+}
+
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
+	platform       string
 }
 
 func main() {
 	const root_file_path = "."
 	const port = "8080"
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("Error loading .env file")
+	}
 	dbURL := os.Getenv("DB_URL")               // getting the database url
 	dbConn, err := sql.Open("postgres", dbURL) //opening the connection
 	if err != nil {
@@ -30,8 +45,9 @@ func main() {
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             database.New(dbConn), //new database connection
+		platform:       os.Getenv("PLATFORM"),
 	}
-
+	fmt.Println(apiCfg.platform)
 	mux := http.NewServeMux() //creating a serve multiplexer :- connects request types --> handlers
 
 	//Register the Handler
@@ -44,6 +60,7 @@ func main() {
 	mux.HandleFunc("POST /admin/reset", apiCfg.handleReset)
 
 	mux.HandleFunc("POST /api/validate_chirp", handleValidateChirp)
+	mux.HandleFunc("POST /api/users", apiCfg.handleUsers)
 
 	srv := &http.Server{Handler: mux, Addr: ":" + port}
 
