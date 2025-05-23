@@ -28,6 +28,8 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handleMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handleReset)
 
+	mux.HandleFunc("POST /api/validate_chirp", handleValidateChirp)
+
 	srv := &http.Server{Handler: mux, Addr: ":" + port}
 
 	log.Printf("Serving files from %s on port: %s\n", root_file_path, port)
