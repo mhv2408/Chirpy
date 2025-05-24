@@ -47,7 +47,6 @@ func main() {
 		db:             database.New(dbConn), //new database connection
 		platform:       os.Getenv("PLATFORM"),
 	}
-	fmt.Println(apiCfg.platform)
 	mux := http.NewServeMux() //creating a serve multiplexer :- connects request types --> handlers
 
 	//Register the Handler
@@ -62,6 +61,7 @@ func main() {
 	mux.HandleFunc("POST /api/users", apiCfg.handleUsers)
 	mux.HandleFunc("POST /api/chirps", apiCfg.handleChirps)
 	mux.HandleFunc("GET /api/chirps", apiCfg.handleGetChirps)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handleGetChirpsById)
 
 	srv := &http.Server{Handler: mux, Addr: ":" + port}
 
