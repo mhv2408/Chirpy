@@ -15,7 +15,8 @@ func (cfg *apiConfig) handleUsers(w http.ResponseWriter, r *http.Request) {
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		log.Fatalf("unable to decode the json into go struct: %s", err)
+		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
+		return
 	}
 	user, err := cfg.db.CreateUser(r.Context(), params.Email)
 	if err != nil {
