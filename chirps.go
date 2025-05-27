@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mhv2408/Chirpy/internal/auth"
 	"github.com/mhv2408/Chirpy/internal/database"
 )
 
@@ -27,14 +28,33 @@ func validateChirp(w http.ResponseWriter, message string) {
 
 }
 
+func authorizeChirp(header http.Header, jwt_secret string) (uuid.UUID, error) {
+	token, err := auth.GetBearerToken(header)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	user_id, err := auth.ValidateJWT(token, jwt_secret)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return user_id, nil
+}
+
 func (cfg *apiConfig) handleChirps(w http.ResponseWriter, r *http.Request) {
+
+	user_id, err := authorizeChirp(r.Header, cfg.jwt_secret) // authorize the chirp
+
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "unable to authorize the user", err)
+		return
+	}
+
 	type parameters struct {
-		Body   string    `json:"body"`
-		UserId uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
 	decoder := json.NewDecoder(r.Body)
-	params := parameters{}         //struct for the json body expected to get...
-	err := decoder.Decode(&params) //decoding the json into jsonBody struct
+	params := parameters{}        //struct for the json body expected to get...
+	err = decoder.Decode(&params) //decoding the json into jsonBody struct
 	if err != nil {
 		log.Fatal("unable to decode the received json: ", err)
 	}
@@ -45,7 +65,7 @@ func (cfg *apiConfig) handleChirps(w http.ResponseWriter, r *http.Request) {
 
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   params.Body,
-		UserID: params.UserId,
+		UserID: user_id,
 	})
 
 	if err != nil {

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -66,4 +67,15 @@ func TestValidateJWT(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetBearerToken(t *testing.T) {
+	test_header := http.Header{}
+	test_header.Add("Authorization", "Bearer Chirpy-access")
+	want_header := "Chirpy-access"
+	got_header, err := GetBearerToken(test_header)
+	if err != nil || got_header != want_header {
+		t.Errorf("GetBearerToken() gotHeader = %v, want %v", got_header, want_header)
+	}
+
 }

@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/mhv2408/Chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Password string `json:"password"`
-		Email    string `json:"email"`
+		Password  string        `json:"password"`
+		Email     string        `json:"email"`
+		ExpiresIn time.Duration `json:"expires_in_seconds,omitempty"`
 	}
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
@@ -19,7 +21,9 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal("unable to decode the received json: ", err)
 	}
-
+	if params.ExpiresIn == 0 { // set the default expiration value to 1 hour
+		params.ExpiresIn = time.Duration(3600) * time.Second // one hour in seconds
+	}
 	user, err := cfg.db.UserByEmail(r.Context(), params.Email)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "Couldn't retrieve user by email", err)
@@ -29,11 +33,17 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token, err := auth.MakeJWT(user.ID, cfg.jwt_secret, params.ExpiresIn)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "unable to create a token", err)
+	}
+
 	respondWithJson(w, http.StatusOK, User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
+		Token:     token,
 	})
 
 }

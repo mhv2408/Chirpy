@@ -20,12 +20,14 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Token     string    `json:"token"`
 }
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
 	platform       string
+	jwt_secret     string
 }
 
 func main() {
@@ -46,6 +48,7 @@ func main() {
 		fileserverHits: atomic.Int32{},
 		db:             database.New(dbConn), //new database connection
 		platform:       os.Getenv("PLATFORM"),
+		jwt_secret:     os.Getenv("JWT_SECRET"),
 	}
 	mux := http.NewServeMux() //creating a serve multiplexer :- connects request types --> handlers
 
