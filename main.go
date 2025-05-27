@@ -65,6 +65,10 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", apiCfg.handleGetChirps)
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handleGetChirpsById)
 	mux.HandleFunc("POST /api/login", apiCfg.handleLogin)
+	// refresh end point
+	mux.HandleFunc("POST /api/refresh", apiCfg.handleRefresh)
+
+	mux.HandleFunc("POST /api/revoke", apiCfg.handleRevoke)
 
 	srv := &http.Server{Handler: mux, Addr: ":" + port}
 
