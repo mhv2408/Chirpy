@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/mhv2408/Chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) handleWebHooks(w http.ResponseWriter, r *http.Request) {
@@ -17,9 +18,20 @@ func (cfg *apiConfig) handleWebHooks(w http.ResponseWriter, r *http.Request) {
 		} `json:"data"`
 	}
 
+	// validate the API key
+	api_key, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Couldn't find api key", err)
+		return
+	}
+	if api_key != cfg.polka_key {
+		respondWithError(w, http.StatusUnauthorized, "API key is invalid", err)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "cannot parse the json body", err)
 		return
@@ -29,6 +41,7 @@ func (cfg *apiConfig) handleWebHooks(w http.ResponseWriter, r *http.Request) {
 		respondWithJson(w, http.StatusNoContent, nil)
 		return
 	}
+
 	// upgrade the user subscription
 	err = cfg.db.UpgradeUserToChirpyRed(r.Context(), uuid.MustParse(params.Data.UserID))
 	if err != nil {
