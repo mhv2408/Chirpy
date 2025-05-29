@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -34,23 +33,37 @@ type apiConfig struct {
 func main() {
 	const root_file_path = "."
 	const port = "8080"
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("Error loading .env file")
+	godotenv.Load(".env")
+
+	dbURL := os.Getenv("DB_URL") // getting the database url
+	if dbURL == "" {
+		log.Fatal("DB_URL must be set")
 	}
-	dbURL := os.Getenv("DB_URL")               // getting the database url
 	dbConn, err := sql.Open("postgres", dbURL) //opening the connection
 	if err != nil {
 		log.Fatalf("Error opening database: %s", err)
 		return
+	}
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("ADMIN_KEY environment variable is not set")
+	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
+	polkaKey := os.Getenv("POLKA_KEY")
+	if polkaKey == "" {
+		log.Fatal("POLKA_KEY environment variable is not set")
 	}
 
 	//new config
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		db:             database.New(dbConn), //new database connection
-		platform:       os.Getenv("PLATFORM"),
-		jwt_secret:     os.Getenv("JWT_SECRET"),
-		polka_key:      os.Getenv("POLKA_KEY"),
+		platform:       platform,
+		jwt_secret:     jwtSecret,
+		polka_key:      polkaKey,
 	}
 	mux := http.NewServeMux() //creating a serve multiplexer :- connects request types --> handlers
 
